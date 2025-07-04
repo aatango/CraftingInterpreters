@@ -1,14 +1,49 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-fun main() {
-    val name = "Kotlin"
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    println("Hello, $name!")
+import java.io.File
+import kotlin.system.exitProcess
 
-    for (i in 1..<5) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        println("i = $i")
+fun main(args: Array<String>) {
+    if (args.size > 1) {
+        println("Usage: kLox with script")
+        exitProcess(64)
+    } else if (args.size == 1) {
+        runFile(args[0])
+    } else {
+        runPrompt()
     }
+}
+
+var hadError: Boolean = false
+
+private fun runFile(path: String) {
+    run(File(path).readText(Charsets.UTF_8))
+
+    if (hadError) exitProcess(65)
+}
+
+private fun runPrompt() {
+    while (true) {
+        print("> ")
+        val line: String = readln()
+        if (line.isEmpty()) break
+        run(line)
+        hadError = false
+    }
+}
+
+private fun run(source: String) {
+    val scanner = Scanner(source)
+    val tokens: List<Token> = scanner.scanTokens()
+
+    for (token in tokens) {
+        println(token)
+    }
+}
+
+fun error(line: Int, message: String) {
+    report(line = line, where = "", message = message)
+}
+
+private fun report(line: Int, where: String, message: String) {
+    System.err.println("[line $line] Error: $where: $message")
+    hadError = true
 }
