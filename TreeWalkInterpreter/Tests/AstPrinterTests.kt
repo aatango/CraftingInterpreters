@@ -13,6 +13,6 @@ class AstPrinterTests {
             Grouping(Literal(45.67))
         )
 
-        assertEquals(AstPrinter().print(expression), "(* (- 123) (Grouping 45.67))")
+        assertEquals(printAst(expression), "(* (- 123) (Grouping 45.67))")
     }
 }

@@ -11,8 +11,8 @@ def parse_output_directory() -> pathlib.Path:
     return parser.parse_args().outputDirectory
 
 
-def define_type(name: str, class_name: str, fields: str) -> str:
-    content: str = f"class {class_name}("
+def define_type(class_name: str, fields: str) -> str:
+    content: str = f"data class {class_name}("
 
     for field in fields.split(", "):
         field_type, field_name = field.split()
@@ -20,40 +20,17 @@ def define_type(name: str, class_name: str, fields: str) -> str:
 
     content = content[:-2]  # Remove unnecessary trailing comma
 
-    content += f") : {name} {{\n"
-
-    content += (f"    override fun <T> accept(visitor: Expr.Visitor<T>): T"
-                f" = visitor.visit{class_name}{name}(this)\n")
-
-    content += "}\n\n"
+    content += "): Expr\n"
 
     return content
 
 
 def define_ast(name: str, types: list[str]) -> str:
-    content: str = f"interface {name} {{\n"
-
-    content += define_visitor(name, types)
-
-    content += "    fun <T> accept(visitor: Visitor<T>): T\n\n"
-
-    content += "}\n\n"
+    content: str = f"sealed interface {name}\n\n"
 
     for t in types:
         type_name, fields = t.split(":")
-        content += define_type(name, type_name.rstrip(), fields)
-
-    return content
-
-
-def define_visitor(base: str, types: list[str]) -> str:
-    content = "    interface Visitor<T> {\n"
-
-    for t in types:
-        type_name, _ = t.split(":")
-        content += f"        fun visit{type_name.rstrip()}{base}({base.lower()}: {type_name.rstrip()}): T\n"
-
-    content += "    }\n\n"
+        content += define_type(type_name.rstrip(), fields)
 
     return content
 
