@@ -31,17 +31,18 @@ private fun runPrompt() {
 }
 
 private fun run(source: String) {
-    val scanner = Scanner(source)
-    val tokens: List<Token> = scanner.scanTokens()
+    val tokens = Scanner(source).scanTokens()
+    val expression: Expr? = Parser(tokens).parse()
 
-    for (token in tokens) {
-        println(token)
-    }
+    if (hadError) return
+
+    println(printAst(expression!!))
 }
 
-fun error(line: Int, message: String) {
-    report(line = line, where = "", message = message)
-}
+fun error(line: Int, message: String) = report(line = line, where = "", message = message)
+fun error(token: Token, message: String) =
+    if (token.type == TokenType.EOF) report(token.line, " at the end", message)
+    else report(token.line, "at '${token.lexeme}'", message)
 
 private fun report(line: Int, where: String, message: String) {
     System.err.println("[line $line] Error: $where: $message")
