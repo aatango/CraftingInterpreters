@@ -13,11 +13,13 @@ fun main(args: Array<String>) {
 }
 
 var hadError: Boolean = false
+var hadRuntimeError: Boolean = false
 
 private fun runFile(path: String) {
     run(File(path).readText(Charsets.UTF_8))
 
     if (hadError) exitProcess(65)
+    if (hadRuntimeError) exitProcess(70)
 }
 
 private fun runPrompt() {
@@ -36,13 +38,19 @@ private fun run(source: String) {
 
     if (hadError) return
 
-    println(printAst(expression!!))
+    expression?.let { interpret(it) }
 }
 
 fun error(line: Int, message: String) = report(line = line, where = "", message = message)
 fun error(token: Token, message: String) =
     if (token.type == TokenType.EOF) report(token.line, " at the end", message)
     else report(token.line, "at '${token.lexeme}'", message)
+
+fun runtimeError(err: RuntimeError) {
+    println(err.message)
+    println("[line ${err.token.line}]")
+    hadRuntimeError = true
+}
 
 private fun report(line: Int, where: String, message: String) {
     System.err.println("[line $line] Error: $where: $message")
