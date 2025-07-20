@@ -34,11 +34,11 @@ private fun runPrompt() {
 
 private fun run(source: String) {
     val tokens = Scanner(source).scanTokens()
-    val expression: Expr? = Parser(tokens).parse()
+    val statements: List<Stmt> = Parser(tokens).parse()
 
     if (hadError) return
 
-    expression?.let { interpret(it) }
+    interpret(statements)
 }
 
 fun error(line: Int, message: String) = report(line = line, where = "", message = message)

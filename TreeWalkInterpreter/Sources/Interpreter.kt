@@ -1,9 +1,15 @@
-fun interpret(expr: Expr) {
+fun interpret(statements: List<Stmt>) {
     try {
-        val value: Any? = evaluate(expr)
-        println(stringify(value))
+        for (statement in statements) execute(statement)
     } catch (err: RuntimeError) {
         runtimeError(err)
+    }
+}
+
+private fun execute(stmt: Stmt) {
+    when (stmt) {
+        is Expression -> evaluate(stmt.expression)
+        is Print -> println(stringify(evaluate(stmt.expression)))
     }
 }
 

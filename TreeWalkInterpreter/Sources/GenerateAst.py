@@ -11,7 +11,7 @@ def parse_output_directory() -> pathlib.Path:
     return parser.parse_args().outputDirectory
 
 
-def define_type(class_name: str, fields: str) -> str:
+def define_type(class_name: str, fields: str, base_class: str) -> str:
     content: str = f"data class {class_name}("
 
     for field in fields.split(", "):
@@ -20,7 +20,7 @@ def define_type(class_name: str, fields: str) -> str:
 
     content = content[:-2]  # Remove unnecessary trailing comma
 
-    content += ") : Expr\n"
+    content += f") : {base_class}\n"
 
     return content
 
@@ -30,7 +30,7 @@ def define_ast(name: str, types: list[str]) -> str:
 
     for t in types:
         type_name, fields = t.split(":")
-        content += define_type(type_name.rstrip(), fields)
+        content += define_type(type_name.rstrip(), fields, name)
 
     return content
 
@@ -42,3 +42,8 @@ if __name__ == "__main__":
         "Literal  : Any? value",
         "Unary    : Token operator, Expr right"])
     pathlib.Path("Expr.kt").write_text(expr_content)
+
+    stmt_file_name: str = "Stmt"
+    stmt_content: str = define_ast(stmt_file_name,
+                                   ["Expression: Expr expression", "Print: Expr expression"])
+    pathlib.Path(f"{stmt_file_name}.kt").write_text(stmt_content)

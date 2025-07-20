@@ -1,13 +1,32 @@
 private class ParseError : RuntimeException()
 
 class Parser(private val tokens: List<Token>, private var current: Int = 0) {
-    fun parse(): Expr? = try {
-        expression()
-    } catch (_: ParseError) {
-        null
+    fun parse(): List<Stmt> {
+        val statements: ArrayList<Stmt> = ArrayList()
+
+        while (!isAtEnd()) {
+            statements.add(statement())
+        }
+
+        return statements
     }
 
     private fun expression(): Expr = equality()
+
+    private fun statement(): Stmt =
+        if (matchTokens(TokenType.PRINT)) printStatement() else expressionStatement()
+
+    private fun expressionStatement(): Stmt {
+        val expr: Expr = expression()
+        consumeToken(TokenType.SEMICOLON, "Expect ';' after expression")
+        return Expression(expr)
+    }
+
+    private fun printStatement(): Stmt {
+        val value: Expr = expression()
+        consumeToken(TokenType.SEMICOLON, "Expect ';' after value")
+        return Print(value)
+    }
 
     private fun equality(): Expr =
         binaryOperation(::comparison, TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)
