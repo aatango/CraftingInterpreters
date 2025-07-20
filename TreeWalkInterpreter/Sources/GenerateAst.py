@@ -20,7 +20,7 @@ def define_type(class_name: str, fields: str) -> str:
 
     content = content[:-2]  # Remove unnecessary trailing comma
 
-    content += "): Expr\n"
+    content += ") : Expr\n"
 
     return content
 
@@ -36,13 +36,9 @@ def define_ast(name: str, types: list[str]) -> str:
 
 
 if __name__ == "__main__":
-    expression_types: list[str] = [
+    expr_content: str = define_ast("Expr", [
         "Binary   : Expr left, Token operator, Expr right",
         "Grouping : Expr expression",
         "Literal  : Any? value",
-        "Unary    : Token operator, Expr right"]
-
-    base_name: str = "Expr"
-    file_content: str = define_ast(base_name, expression_types)
-
-    pathlib.Path(parse_output_directory(), f"{base_name}.kt").write_text(file_content)
+        "Unary    : Token operator, Expr right"])
+    pathlib.Path("Expr.kt").write_text(expr_content)
