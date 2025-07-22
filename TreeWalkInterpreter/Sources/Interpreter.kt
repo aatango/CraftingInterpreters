@@ -12,16 +12,17 @@ private fun execute(stmt: Stmt) {
     when (stmt) {
         is Expression -> evaluate(stmt.expression)
         is Print -> println(stringify(evaluate(stmt.expression)))
-        is Var -> {
-            val value: Any? = stmt.initializer?.let { evaluate(it) }
-            environment.define(stmt.name.lexeme, value)
-        }
+        is Var -> stmt.initializer?.let(::evaluate)
+            .also { environment.define(stmt.name.lexeme, it) }
     }
 }
 
 private fun evaluate(expr: Expr): Any? {
     return when (expr) {
-        is Assign -> evaluate(expr.value).let { environment.assign(expr.name, it); return it }
+        is Assign -> evaluate(expr.value)
+            .apply { environment.assign(expr.name, this) }
+            .run { return this }
+
         is Grouping -> evaluate(expr.expression)
         is Literal -> expr.value
         is Variable -> environment.get(expr.name)
@@ -71,8 +72,7 @@ private fun evaluate(expr: Expr): Any? {
                     if (left is Double && right is Double) return left + right
                     if (left is String && right is String) return left + right
                     throw RuntimeError(
-                        expr.operator,
-                        "Operands must be two numbers, or two strings!"
+                        expr.operator, "Operands must be two numbers, or two strings!"
                     )
                 }
 
@@ -80,14 +80,12 @@ private fun evaluate(expr: Expr): Any? {
             }
         }
 
-        is Unary -> {
-            val right: Any? = evaluate(expr.right)
-
+        is Unary -> evaluate(expr.right).run {
             when (expr.operator.type) {
-                TokenType.BANG -> !isTruthy(right)
+                TokenType.BANG -> !isTruthy(this)
                 TokenType.MINUS -> {
-                    checkNumberOperand(expr.operator, right)
-                    return -(right as Double)
+                    checkNumberOperand(expr.operator, this)
+                    return -(this as Double)
                 }
 
                 else -> {}
@@ -96,9 +94,7 @@ private fun evaluate(expr: Expr): Any? {
     }
 }
 
-private fun isTruthy(obj: Any?): Boolean {
-    return obj as? Boolean ?: (obj != null)
-}
+private fun isTruthy(obj: Any?): Boolean = obj as? Boolean ?: (obj != null)
 
 private fun checkNumberOperand(operator: Token, operand: Any?) {
     if (operand !is Double) throw RuntimeError(operator, "Operand must be a number!")
@@ -108,12 +104,9 @@ private fun checkNumberOperands(operator: Token, lhs: Any?, rhs: Any?) {
     if (lhs !is Double || rhs !is Double) throw RuntimeError(operator, "Operands must be numbers!")
 }
 
-private fun stringify(obj: Any?): String {
-    return if (obj == null) "nil" else {
-        val text: String = obj.toString()
-        return if (obj is Double && text.endsWith(".0")) text.substring(
-            0,
-            text.length - 2
-        ) else text
+private fun stringify(obj: Any?): String = obj?.let {
+    it.toString().run {
+        if (endsWith(".0") && it is Double) substring(0, length - 2)
+        else this
     }
-}
+} ?: "nil"

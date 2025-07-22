@@ -1,15 +1,8 @@
 private class ParseError : RuntimeException()
 
 class Parser(private val tokens: List<Token>, private var current: Int = 0) {
-    fun parse(): List<Stmt> {
-        val statements: ArrayList<Stmt> = ArrayList()
-
-        while (!isAtEnd()) {
-            declaration()?.let { statements.add(it) }
-        }
-
-        return statements
-    }
+    fun parse(): List<Stmt> =
+        ArrayList<Stmt>().apply { while (!isAtEnd()) declaration()?.let { this.add(it) } }
 
     private fun expression(): Expr = assignment()
 
@@ -23,32 +16,26 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
     private fun statement(): Stmt =
         if (matchTokens(TokenType.PRINT)) printStatement() else expressionStatement()
 
-    private fun expressionStatement(): Stmt {
-        val expr: Expr = expression()
-        consumeToken(TokenType.SEMICOLON, "Expect ';' after expression")
-        return Expression(expr)
-    }
+    private fun expressionStatement(): Stmt = expression()
+        .apply { consumeToken(TokenType.SEMICOLON, "Expect ';' after expression") }
+        .run(::Expression)
 
-    private fun assignment(): Expr {
-        val expr: Expr = equality()
-
+    private fun assignment(): Expr = equality().run {
         if (matchTokens(TokenType.EQUAL)) {
             val equals: Token = previous()
             val value: Expr = assignment()
 
-            if (expr is Variable) return Assign(expr.name, value)
+            if (this is Variable) return Assign(name, value)
 
             error(equals, "Invalid assignment target")
         }
 
-        return expr
+        return this
     }
 
-    private fun printStatement(): Stmt {
-        val value: Expr = expression()
-        consumeToken(TokenType.SEMICOLON, "Expect ';' after value")
-        return Print(value)
-    }
+    private fun printStatement(): Stmt = expression()
+        .apply { consumeToken(TokenType.SEMICOLON, "Expect ';' after value") }
+        .run(::Print)
 
     private fun varDeclaration(): Stmt {
         val name: Token = consumeToken(TokenType.IDENTIFIER, "Expect variable name")
@@ -83,22 +70,17 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         return primary()
     }
 
-    private fun primary(): Expr {
-        return when {
-            matchTokens(TokenType.FALSE) -> Literal(false)
-            matchTokens(TokenType.TRUE) -> Literal(true)
-            matchTokens(TokenType.NIL) -> Literal(null)
-            matchTokens(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
-            matchTokens(TokenType.IDENTIFIER) -> Variable(previous())
-            matchTokens(TokenType.LEFT_PAREN) -> {
-                val expr: Expr = expression()
-                consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after expression")
+    private fun primary(): Expr = when {
+        matchTokens(TokenType.FALSE) -> Literal(false)
+        matchTokens(TokenType.TRUE) -> Literal(true)
+        matchTokens(TokenType.NIL) -> Literal(null)
+        matchTokens(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
+        matchTokens(TokenType.IDENTIFIER) -> Variable(previous())
+        matchTokens(TokenType.LEFT_PAREN) -> expression()
+            .also { consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after expression") }
+            .let(::Grouping)
 
-                return Grouping(expr)
-            }
-
-            else -> throw tokenError(peek(), "Expect expression!")
-        }
+        else -> throw tokenError(peek(), "Expect expression!")
     }
 
     private fun binaryOperation(

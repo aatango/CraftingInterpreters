@@ -38,52 +38,47 @@ class Scanner(private val source: String, private val tokens: ArrayList<Token> =
     private fun advance() = source[current++]
 
     private fun addToken(type: TokenType, literal: Any? = null) {
-        val text: String = source.substring(start, current)
-        tokens.add(Token(type, text, literal, line))
+        source.substring(start, current)
+            .run { Token(type, this, literal, line) }
+            .also { tokens.add(it) }
     }
 
     private fun scanToken() {
-        when (val c: Char = advance()) {
-            '(' -> addToken(TokenType.LEFT_PAREN)
-            ')' -> addToken(TokenType.RIGHT_PAREN)
-            '{' -> addToken(TokenType.LEFT_BRACE)
-            '}' -> addToken(TokenType.RIGHT_BRACE)
-            ',' -> addToken(TokenType.COMMA)
-            '.' -> addToken(TokenType.DOT)
-            '-' -> addToken(TokenType.MINUS)
-            '+' -> addToken(TokenType.PLUS)
-            ';' -> addToken(TokenType.SEMICOLON)
-            '*' -> addToken(TokenType.STAR)
-            '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
-            '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
-            '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
-            '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
-            '/' -> if (match('/')) {
-                while (lookAhead() != '\n' && !isAtEnd()) advance()
-            } else {
-                addToken(
-                    TokenType.SLASH
-                )
-            }
-            ' ', '\r', '\t' -> {}
-            '\n' -> line++
-            '"' -> string()
-            else -> if (isDigit(c)) {
-                number()
-            } else if (isAlpha(c)) {
-                identifier()
-            } else {
-                error(line, "Unexpected character!")
+        advance().run {
+            when (this) {
+                ' ', '\r', '\t' -> {}
+                '\n' -> line++
+                '"' -> string()
+                '(' -> addToken(TokenType.LEFT_PAREN)
+                ')' -> addToken(TokenType.RIGHT_PAREN)
+                '{' -> addToken(TokenType.LEFT_BRACE)
+                '}' -> addToken(TokenType.RIGHT_BRACE)
+                ',' -> addToken(TokenType.COMMA)
+                '.' -> addToken(TokenType.DOT)
+                '-' -> addToken(TokenType.MINUS)
+                '+' -> addToken(TokenType.PLUS)
+                ';' -> addToken(TokenType.SEMICOLON)
+                '*' -> addToken(TokenType.STAR)
+                '!' -> addToken(if (match('=')) TokenType.BANG_EQUAL else TokenType.BANG)
+                '=' -> addToken(if (match('=')) TokenType.EQUAL_EQUAL else TokenType.EQUAL)
+                '<' -> addToken(if (match('=')) TokenType.LESS_EQUAL else TokenType.LESS)
+                '>' -> addToken(if (match('=')) TokenType.GREATER_EQUAL else TokenType.GREATER)
+                '/' ->
+                    if (match('/')) while (lookAhead() != '\n' && !isAtEnd()) advance()
+                    else addToken(TokenType.SLASH)
+
+                else ->
+                    if (isDigit(this)) number()
+                    else if (isAlpha(this)) identifier()
+                    else error(line, "Unexpected character!")
+
             }
         }
     }
 
     private fun identifier() {
         while (isAlphaNumeric(lookAhead())) advance()
-
-        var type: TokenType? = keywords[source.substring(start, current)]
-        if (type == null) type = TokenType.IDENTIFIER
-        addToken(type)
+        with(keywords[source.substring(start, current)] ?: TokenType.IDENTIFIER) { addToken(this) }
     }
 
     private fun match(expected: Char): Boolean {
@@ -128,7 +123,6 @@ class Scanner(private val source: String, private val tokens: ArrayList<Token> =
 
         advance()
 
-        val value: String = source.substring(start + 1, current - 1)
-        addToken(TokenType.STRING, value)
+        source.substring(start + 1, current - 1).also { addToken(TokenType.STRING, it) }
     }
 }

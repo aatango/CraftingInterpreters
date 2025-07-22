@@ -25,20 +25,15 @@ private fun runFile(path: String) {
 private fun runPrompt() {
     while (true) {
         print("> ")
-        val line: String = readln()
-        if (line.isEmpty()) break
-        run(line)
+        readln().takeUnless { it.isEmpty() }?.let(::run) ?: break
         hadError = false
     }
 }
 
 private fun run(source: String) {
-    val tokens = Scanner(source).scanTokens()
-    val statements: List<Stmt> = Parser(tokens).parse()
-
-    if (hadError) return
-
-    interpret(statements)
+    Scanner(source).scanTokens()
+        .run { Parser(this).parse() }
+        .also { if (!hadError) interpret(it) }
 }
 
 fun error(line: Int, message: String) = report(line = line, where = "", message = message)

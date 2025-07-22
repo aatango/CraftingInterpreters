@@ -7,11 +7,8 @@ class Token(val type: TokenType, val lexeme: String, val literal: Any?, val line
         return type == other.type && lexeme == other.lexeme && literal == other.literal && line == other.line
     }
 
-    override fun hashCode(): Int {
-        var result = line
-        result = 31 * result + type.hashCode()
-        result = 31 * result + lexeme.hashCode()
-        result = 31 * result + (literal?.hashCode() ?: 0)
-        return result
-    }
+    override fun hashCode(): Int = line
+        .apply { 31 * this + type.hashCode() }
+        .apply { 31 * this + lexeme.hashCode() }
+        .apply { 31 * this + (literal?.hashCode() ?: 0) }
 }
