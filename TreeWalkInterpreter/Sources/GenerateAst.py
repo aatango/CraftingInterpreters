@@ -47,6 +47,8 @@ if __name__ == "__main__":
 
     stmt_file_name: str = "Stmt"
     stmt_content: str = define_ast(stmt_file_name,
-                                   ["Expression: Expr expression", "Print: Expr expression",
+                                   ["Block: List<Stmt?> statements",
+                                    "Expression: Expr expression",
+                                    "Print: Expr expression",
                                     "Var: Token name, Expr? initializer"])
     pathlib.Path(f"{stmt_file_name}.kt").write_text(stmt_content)

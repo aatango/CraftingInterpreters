@@ -13,12 +13,19 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         null
     }
 
-    private fun statement(): Stmt =
-        if (matchTokens(TokenType.PRINT)) printStatement() else expressionStatement()
+    private fun statement(): Stmt = when {
+        matchTokens(TokenType.PRINT) -> printStatement()
+        matchTokens(TokenType.LEFT_BRACE) -> Block(block())
+        else -> expressionStatement()
+    }
 
     private fun expressionStatement(): Stmt = expression()
         .apply { consumeToken(TokenType.SEMICOLON, "Expect ';' after expression") }
         .run(::Expression)
+
+    private fun block(): List<Stmt?> = ArrayList<Stmt?>()
+        .apply { while (!isToken(TokenType.RIGHT_BRACE) && !isAtEnd()) add(declaration()) }
+        .also { consumeToken(TokenType.RIGHT_BRACE, "Expect '}' after block") }
 
     private fun assignment(): Expr = equality().run {
         if (matchTokens(TokenType.EQUAL)) {

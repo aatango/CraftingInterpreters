@@ -10,11 +10,19 @@ var environment: Environment = Environment()
 
 private fun execute(stmt: Stmt) {
     when (stmt) {
+        is Block -> executeBlock(stmt.statements, Environment(environment))
         is Expression -> evaluate(stmt.expression)
         is Print -> println(stringify(evaluate(stmt.expression)))
         is Var -> stmt.initializer?.let(::evaluate)
             .also { environment.define(stmt.name.lexeme, it) }
     }
+}
+
+private fun executeBlock(statements: List<Stmt?>, env: Environment) {
+    environment
+        .also { environment = env }
+        .also { for (statement in statements) statement?.let(::execute) }
+        .also { environment = it }
 }
 
 private fun evaluate(expr: Expr): Any? {
@@ -101,7 +109,10 @@ private fun checkNumberOperand(operator: Token, operand: Any?) {
 }
 
 private fun checkNumberOperands(operator: Token, lhs: Any?, rhs: Any?) {
-    if (lhs !is Double || rhs !is Double) throw RuntimeError(operator, "Operands must be numbers!")
+    if (lhs !is Double || rhs !is Double) throw RuntimeError(
+        operator,
+        "Operands must be numbers!"
+    )
 }
 
 private fun stringify(obj: Any?): String = obj?.let {
