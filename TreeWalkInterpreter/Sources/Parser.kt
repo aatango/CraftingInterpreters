@@ -5,13 +5,20 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         val statements: ArrayList<Stmt> = ArrayList()
 
         while (!isAtEnd()) {
-            statements.add(statement())
+            declaration()?.let { statements.add(it) }
         }
 
         return statements
     }
 
-    private fun expression(): Expr = equality()
+    private fun expression(): Expr = assignment()
+
+    private fun declaration(): Stmt? = try {
+        if (matchTokens(TokenType.VAR)) varDeclaration() else statement()
+    } catch (_: ParseError) {
+        synchronise()
+        null
+    }
 
     private fun statement(): Stmt =
         if (matchTokens(TokenType.PRINT)) printStatement() else expressionStatement()
@@ -22,10 +29,34 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         return Expression(expr)
     }
 
+    private fun assignment(): Expr {
+        val expr: Expr = equality()
+
+        if (matchTokens(TokenType.EQUAL)) {
+            val equals: Token = previous()
+            val value: Expr = assignment()
+
+            if (expr is Variable) return Assign(expr.name, value)
+
+            error(equals, "Invalid assignment target")
+        }
+
+        return expr
+    }
+
     private fun printStatement(): Stmt {
         val value: Expr = expression()
         consumeToken(TokenType.SEMICOLON, "Expect ';' after value")
         return Print(value)
+    }
+
+    private fun varDeclaration(): Stmt {
+        val name: Token = consumeToken(TokenType.IDENTIFIER, "Expect variable name")
+        val initializer: Expr? = if (matchTokens(TokenType.EQUAL)) expression() else null
+
+        consumeToken(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+
+        return Var(name, initializer)
     }
 
     private fun equality(): Expr =
@@ -58,6 +89,7 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
             matchTokens(TokenType.TRUE) -> Literal(true)
             matchTokens(TokenType.NIL) -> Literal(null)
             matchTokens(TokenType.NUMBER, TokenType.STRING) -> Literal(previous().literal)
+            matchTokens(TokenType.IDENTIFIER) -> Variable(previous())
             matchTokens(TokenType.LEFT_PAREN) -> {
                 val expr: Expr = expression()
                 consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after expression")
@@ -115,5 +147,28 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
     private fun tokenError(token: Token, message: String): ParseError {
         error(token, message)
         return ParseError()
+    }
+
+    private fun synchronise() {
+        advance()
+
+        while (!isAtEnd()) {
+            if (previous().type == TokenType.SEMICOLON) return
+
+            when (peek().type) {
+                TokenType.CLASS,
+                TokenType.FUN,
+                TokenType.VAR,
+                TokenType.FOR,
+                TokenType.IF,
+                TokenType.WHILE,
+                TokenType.PRINT,
+                TokenType.RETURN -> return
+
+                else -> {}
+            }
+
+            advance()
+        }
     }
 }

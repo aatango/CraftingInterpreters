@@ -37,13 +37,16 @@ def define_ast(name: str, types: list[str]) -> str:
 
 if __name__ == "__main__":
     expr_content: str = define_ast("Expr", [
+        "Assign   : Token name, Expr value",
         "Binary   : Expr left, Token operator, Expr right",
         "Grouping : Expr expression",
         "Literal  : Any? value",
-        "Unary    : Token operator, Expr right"])
+        "Unary    : Token operator, Expr right",
+        "Variable : Token name"])
     pathlib.Path("Expr.kt").write_text(expr_content)
 
     stmt_file_name: str = "Stmt"
     stmt_content: str = define_ast(stmt_file_name,
-                                   ["Expression: Expr expression", "Print: Expr expression"])
+                                   ["Expression: Expr expression", "Print: Expr expression",
+                                    "Var: Token name, Expr? initializer"])
     pathlib.Path(f"{stmt_file_name}.kt").write_text(stmt_content)

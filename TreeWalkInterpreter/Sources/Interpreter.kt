@@ -6,17 +6,25 @@ fun interpret(statements: List<Stmt>) {
     }
 }
 
+var environment: Environment = Environment()
+
 private fun execute(stmt: Stmt) {
     when (stmt) {
         is Expression -> evaluate(stmt.expression)
         is Print -> println(stringify(evaluate(stmt.expression)))
+        is Var -> {
+            val value: Any? = stmt.initializer?.let { evaluate(it) }
+            environment.define(stmt.name.lexeme, value)
+        }
     }
 }
 
 private fun evaluate(expr: Expr): Any? {
     return when (expr) {
+        is Assign -> evaluate(expr.value).let { environment.assign(expr.name, it); return it }
         is Grouping -> evaluate(expr.expression)
         is Literal -> expr.value
+        is Variable -> environment.get(expr.name)
         is Binary -> {
             val left: Any? = evaluate(expr.left)
             val right: Any? = evaluate(expr.right)
