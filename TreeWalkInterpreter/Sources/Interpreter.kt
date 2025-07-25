@@ -15,6 +15,10 @@ private fun execute(stmt: Stmt) {
         is Print -> println(stringify(evaluate(stmt.expression)))
         is Var -> stmt.initializer?.let(::evaluate)
             .also { environment.define(stmt.name.lexeme, it) }
+
+        is If ->
+            if (isTruthy(evaluate(stmt.condition))) execute(stmt.thenBranch)
+            else stmt.elseBranch?.let(::execute)
     }
 }
 
