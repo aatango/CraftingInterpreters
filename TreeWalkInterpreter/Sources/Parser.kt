@@ -16,6 +16,7 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
     private fun statement(): Stmt = when {
         matchTokens(TokenType.IF) -> ifStatement()
         matchTokens(TokenType.PRINT) -> printStatement()
+        matchTokens(TokenType.WHILE) -> whileStatement()
         matchTokens(TokenType.LEFT_BRACE) -> Block(block())
         else -> expressionStatement()
     }
@@ -90,6 +91,12 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
 
         return Var(name, initializer)
     }
+
+    private fun whileStatement(): Stmt =
+        consumeToken(TokenType.LEFT_PAREN, "Expect '(' after 'while'")
+            .run { expression() }
+            .apply { consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after condition") }
+            .run { While(this, statement()) }
 
     private fun equality(): Expr =
         binaryOperation(::comparison, TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)

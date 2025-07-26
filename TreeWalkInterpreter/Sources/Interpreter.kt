@@ -13,6 +13,7 @@ private fun execute(stmt: Stmt) {
         is Block -> executeBlock(stmt.statements, Environment(environment))
         is Expression -> evaluate(stmt.expression)
         is Print -> println(stringify(evaluate(stmt.expression)))
+        is While -> while (isTruthy(evaluate(stmt.condition))) execute(stmt.body)
         is Var -> stmt.initializer?.let(::evaluate)
             .also { environment.define(stmt.name.lexeme, it) }
 
