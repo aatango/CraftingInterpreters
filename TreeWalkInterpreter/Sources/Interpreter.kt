@@ -38,6 +38,18 @@ private fun evaluate(expr: Expr): Any? {
         is Grouping -> evaluate(expr.expression)
         is Literal -> expr.value
         is Variable -> environment.get(expr.name)
+        is Logical -> {
+            val left: Any? = evaluate(expr.left)
+
+            if (expr.operator.type == TokenType.OR) {
+                if (isTruthy(left)) return left
+            } else {
+                if (!isTruthy(left)) return left
+            }
+
+            return evaluate(expr.right)
+        }
+
         is Binary -> {
             val left: Any? = evaluate(expr.left)
             val right: Any? = evaluate(expr.right)

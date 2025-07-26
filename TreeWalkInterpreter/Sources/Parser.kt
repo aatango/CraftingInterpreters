@@ -41,7 +41,7 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         .apply { while (!isToken(TokenType.RIGHT_BRACE) && !isAtEnd()) add(declaration()) }
         .also { consumeToken(TokenType.RIGHT_BRACE, "Expect '}' after block") }
 
-    private fun assignment(): Expr = equality().run {
+    private fun assignment(): Expr = or().run {
         if (matchTokens(TokenType.EQUAL)) {
             val equals: Token = previous()
             val value: Expr = assignment()
@@ -52,6 +52,30 @@ class Parser(private val tokens: List<Token>, private var current: Int = 0) {
         }
 
         return this
+    }
+
+    private fun or(): Expr {
+        var expr: Expr = and()
+
+        while (matchTokens(TokenType.OR)) {
+            val operator: Token = previous()
+            val right: Expr = and()
+            expr = Logical(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun and(): Expr {
+        var expr: Expr = equality()
+
+        while (matchTokens(TokenType.AND)) {
+            val operator: Token = previous()
+            val right: Expr = equality()
+            expr = Logical(expr, operator, right)
+        }
+
+        return expr
     }
 
     private fun printStatement(): Stmt = expression()
